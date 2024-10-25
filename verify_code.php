@@ -3,6 +3,7 @@ session_start();
 require 'db.php';
 
 $message = "";
+$showPasswordForm = true; // Flag to control the visibility of the password form
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['entered_code'])) {
     if (isset($_SESSION['verification_code'])) {
@@ -19,7 +20,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['entered_code'])) {
     }
 }
 
-
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['new_password']) && isset($_SESSION['code_verified']) && $_SESSION['code_verified']) {
     $new_password = password_hash($_POST['new_password'], PASSWORD_BCRYPT);
 
@@ -27,7 +27,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['new_password']) && iss
     $stmt->bind_param("ss", $new_password, $_SESSION['email']);
     
     if ($stmt->execute()) {
-        $message = "<p>Password berhasil diubah! Anda bisa <a href='login.php'>login</a> dengan password baru Anda.</p>";
+        $message = "<div class='success-message'>Password berhasil diubah! Anda bisa <a href='login.php'>login</a> dengan password baru Anda.</div>";
+        $showPasswordForm = false;
         session_destroy();
     } else {
         $message = "<p style='color:red;'>Terjadi kesalahan saat mengubah password.</p>";
@@ -41,22 +42,24 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['new_password']) && iss
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Reset Password</title>
-    <link rel="stylesheet" href="style.css"> <!-- Link to style.css -->
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="container">
         <h2>Verifikasi Kode</h2>
         <?php if (!empty($message)): ?>
-            <div><?php echo $message; ?></div> <!-- Display message here -->
+            <div><?php echo $message; ?></div>
         <?php endif; ?>
         
         <?php if (isset($_SESSION['code_verified']) && $_SESSION['code_verified']): ?>
-            <h2>Reset Password</h2>
-            <form method="POST" action="">
-                <label>Password Baru:</label><br>
-                <input type="password" name="new_password" required><br>
-                <button type="submit">Ubah Password</button>
-            </form>
+            <?php if ($showPasswordForm): ?>
+                <h2>Reset Password</h2>
+                <form method="POST" action="">
+                    <label>Password Baru:</label><br>
+                    <input type="password" name="new_password" required><br>
+                    <button type="submit">Ubah Password</button>
+                </form>
+            <?php endif; ?>
         <?php else: ?>
             <form method="POST" action="">
                 <label>Masukkan Kode Verifikasi:</label><br>
