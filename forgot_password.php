@@ -1,80 +1,53 @@
 <?php
-// Koneksi ke database
-$host = "localhost";
-$dbname = "todo";
-$username = "root"; // sesuaikan dengan username MySQL Anda
-$password = ""; // sesuaikan dengan password MySQL Anda
+session_start();
+require 'db.php';
 
-try {
-    $pdo = new PDO("mysql:host=$host;dbname=$dbname", $username, $password);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-} catch (PDOException $e) {
-    die("Koneksi gagal: " . $e->getMessage());
-}
-
-// Bagian 1: Kirim token reset password
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['email'])) {
     $email = $_POST['email'];
     
-    // Cek apakah email terdaftar
-    $stmt = $pdo->prepare("SELECT * FROM users WHERE email = :email");
-    $stmt->execute(['email' => $email]);
-    $user = $stmt->fetch();
-    
-    if ($user) {
-        // Buat token dan waktu kedaluwarsa
-        $token = bin2hex(random_bytes(50));
-        $expiry = date('Y-m-d H:i:s', strtotime('+1 hour')); // token berlaku 1 jam
-
-        // Simpan token ke database
-        $stmt = $pdo->prepare("UPDATE users SET reset_token = :token, token_expiry = :expiry WHERE email = :email");
-        $stmt->execute(['token' => $token, 'expiry' => $expiry, 'email' => $email]);
-
-        // Kirim email (untuk keperluan demo, hanya cetak tautan)
-        echo "Klik link ini untuk reset password: ";
-        echo "<a href='forgot_password.php?token=$token'>Reset Password</a>";
-    } else {
-        echo "Email tidak ditemukan.";
-    }
-}
-
-// Bagian 2: Proses reset password jika token ada
-if (isset($_GET['token'])) {
-    $token = $_GET['token'];
-
-    // Cari token di database
-    $stmt = $pdo->prepare("SELECT * FROM users WHERE reset_token = :token AND token_expiry > NOW()");
-    $stmt->execute(['token' => $token]);
-    $user = $stmt->fetch();
+    $stmt = $conn->prepare("SELECT * FROM users WHERE email = ?");
+    $stmt->bind_param("s", $email);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $user = $result->fetch_assoc();
 
     if ($user) {
-        if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['new_password'])) {
-            // Update password
-            $new_password = password_hash($_POST['new_password'], PASSWORD_BCRYPT);
-            $stmt = $pdo->prepare("UPDATE users SET password = :password, reset_token = NULL, token_expiry = NULL WHERE reset_token = :token");
-            $stmt->execute(['password' => $new_password, 'token' => $token]);
+        $verification_code = rand(100000, 999999);
+        
+        $_SESSION['verification_code'] = $verification_code;
+        $_SESSION['email'] = $email;
 
-            echo "Password berhasil diubah!";
-        } else {
-            // Form untuk mengubah password
-            echo "
-                <form method='POST'>
-                    <label>Password Baru:</label><br>
-                    <input type='password' name='new_password' required><br>
-                    <button type='submit'>Ubah Password</button>
-                </form>
-            ";
-        }
+        echo "<script>alert('Kode verifikasi Anda: $verification_code');</script>";
     } else {
-        echo "Token tidak valid atau kedaluwarsa.";
+        echo "<p>Email tidak ditemukan.</p>";
     }
 }
 ?>
 
-<!-- Bagian 1: Form Email -->
-<h2>Forgot Password</h2>
-<form method="POST">
-    <label>Masukkan Email Anda:</label><br>
-    <input type="email" name="email" required><br>
-    <button type="submit">Kirim Link Reset Password</button>
-</form>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lupa Password</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h2>Lupa Password</h2>
+        <form method="POST" action="">
+            <label>Masukkan Email Anda:</label><br>
+            <input type="email" name="email" required><br>
+            <button type="submit">Kirim Kode Verifikasi</button>
+        </form>
+        
+        <?php if (isset($_SESSION['verification_code'])): ?>
+            <form method="POST" action="verify_code.php">
+                <label>Masukkan Kode Verifikasi:</label><br>
+                <input type="text" name="entered_code" required><br>
+                <button type="submit">Verifikasi Kode</button>
+            </form>
+        <?php endif; ?>
+    </div>
+</body>
+</html>
