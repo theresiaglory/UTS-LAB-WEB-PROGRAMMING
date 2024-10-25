@@ -1,8 +1,7 @@
-<!-- NO 1 - USER REGISTRATION & AUTHENTICATION (login) -->
 <?php
 session_start();
 require 'db.php';
-$error="";
+$error = "";
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $email = $_POST['email'];
@@ -23,7 +22,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $error = "Invalid password.";
         }
     } else {
-        $error= "Invalid user.";
+        $error = "Invalid user.";
     }
 }
 ?>
@@ -35,6 +34,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login</title>
     <link rel="stylesheet" href="style.css">
+    <script>
+        function togglePassword() {
+            var passwordField = document.getElementById("password");
+            var passwordCheckbox = document.getElementById("showPassword");
+            passwordField.type = passwordCheckbox.checked ? "text" : "password";
+        }
+    </script>
 </head>
 <body>
     <form method="POST" action="">
@@ -45,11 +51,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             </p>
         <?php endif; ?>
         <input type="email" name="email" placeholder="Email" required> 
-        <input type="password" name="password" placeholder="Password" required>
+        <input type="password" id="password" name="password" placeholder="Password" required>
+        <label>
+            <input type="checkbox" id="showPassword" onclick="togglePassword()"> Show Password
+        </label>
         <button type="submit">Login</button>
         
         <p>Forgot password? <a href="forgot_password.php">Reset here</a></p>
-        <p>Don't have an account? <a href="Registration.php">Register here</a></p>
+        <p>Don't have an account? <a href="sign_up.php">Sign Up</a></p>
     </form>
 </body>
 </html>
