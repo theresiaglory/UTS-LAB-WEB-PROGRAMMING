@@ -1,7 +1,7 @@
 <?php
 $host = '203.175.9.20';
 $db = 'todh8447_todo';           
-$user = 'root';      
+$user = 'todh8447_Morgees';      
 $pass = '';        
 
 // Create a connection
